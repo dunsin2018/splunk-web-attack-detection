@@ -123,7 +123,7 @@ Full IOC reference → [`iocs/indicators.md`](iocs/indicators.md)
 | Search Window   | Last 5 minutes                     |
 | Trigger         | Number of Results > 0              |
 | Severity        | High / Critical                    |
-
+![Alert Creation](https://raw.githubusercontent.com/dunsin2018/splunk-web-attack-detection/refs/heads/main/screenshots/alert_creation.png)
 ---
 
 ## Repository Structure

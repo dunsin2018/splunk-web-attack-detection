@@ -1,0 +1,44 @@
+-- ============================================================
+-- Web Application Attack Detection Query
+-- Project: Web Application Attack Detection & Threat Hunting
+-- Author:  Dunsin Fakorede
+-- Tool:    Splunk Enterprise 10.2.3
+-- Index:   main
+-- Source:  access_log.txt (Apache Combined Log Format)
+-- ============================================================
+-- Results: 248,664 events | 24 unique src_ip / attack_type combos
+-- ============================================================
+
+index=main source="D:\\Splunklogs\\access_log.txt"
+(
+    "sqlmap" OR
+    "Nmap" OR
+    "passwd" OR
+    "../" OR
+    "<script>" OR
+    "cmd=" OR
+    "malicious.com"
+)
+| rex field=_raw "^(?<src_ip>\d+\.\d+\.\d+\.\d+)"
+| eval attack_type=case(
+    like(_raw,"%passwd%") OR like(_raw,"%../%"), "Directory Traversal / LFI",
+    like(_raw,"%sqlmap%") OR like(_raw,"%OR%1%=1%"), "SQL Injection",
+    like(_raw,"%cmd=%"),                            "Command Injection / RCE",
+    like(_raw,"%malicious.com%"),                   "Remote File Inclusion",
+    like(_raw,"%<script>%"),                        "XSS",
+    like(_raw,"%Nmap%"),                            "Recon / Scanning",
+    true(),                                         "Other"
+)
+| stats count by src_ip attack_type
+
+-- ============================================================
+-- NOTES:
+-- 1. The rex field extraction assumes standard Apache CLF format
+--    (IP address is the first field in each log line).
+-- 2. Attack classification uses ordered case() logic — ensure
+--    more specific conditions appear before broader ones.
+-- 3. The "Other" catch-all handles events matching the keyword
+--    filter but not any attack classification pattern.
+-- 4. For production use, replace hardcoded source path with
+--    a macro or props/transforms-based sourcetype.
+-- ============================================================

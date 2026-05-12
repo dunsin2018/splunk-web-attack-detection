@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs (do not commit raw log files — they may contain sensitive data)
+*.log
+*.txt
+
+# Splunk exports
+*.csv
+
+# Editor
+.vscode/
+*.swp

